@@ -1,12 +1,13 @@
+# homeassistant/components/anova/sensors.py
 """Support for Anova Sensors."""
 
 from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
-from anova_wifi import AnovaMode, AnovaState, APCUpdateSensor
-
+from anova_wifi import APCUpdateSensor  # Beibehalten
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -15,6 +16,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.typing import StateType
 
@@ -24,33 +26,29 @@ from .entity import AnovaDescriptionEntity
 
 @dataclass(frozen=True, kw_only=True)
 class AnovaSensorEntityDescription(SensorEntityDescription):
-    """Describes a Anova sensor."""
-
+    """Describes an Anova sensor."""
     value_fn: Callable[[APCUpdateSensor], StateType]
 
 
+def _get(data: APCUpdateSensor, path: list[str]) -> Any:
+    """Safe getter for nested attributes on APCUpdateSensor proxy objects."""
+    obj: Any = data
+    for key in path:
+        obj = getattr(obj, key, None) if not isinstance(obj, dict) else obj.get(key)
+        if obj is None:
+            return None
+    return obj
+
+
 SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
+    # --- Temperatures ---
     AnovaSensorEntityDescription(
-        key="cook_time",
-        state_class=SensorStateClass.TOTAL_INCREASING,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        translation_key="cook_time",
-        device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda data: data.cook_time,
-    ),
-    AnovaSensorEntityDescription(
-        key="state",
-        translation_key="state",
-        device_class=SensorDeviceClass.ENUM,
-        options=[state.name for state in AnovaState],
-        value_fn=lambda data: data.state,
-    ),
-    AnovaSensorEntityDescription(
-        key="mode",
-        translation_key="mode",
-        device_class=SensorDeviceClass.ENUM,
-        options=[mode.name for mode in AnovaMode],
-        value_fn=lambda data: data.mode,
+        key="water_temperature",
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        translation_key="water_temperature",
+        value_fn=lambda d: d.water_temperature,
     ),
     AnovaSensorEntityDescription(
         key="target_temperature",
@@ -58,14 +56,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key="target_temperature",
-        value_fn=lambda data: data.target_temperature,
-    ),
-    AnovaSensorEntityDescription(
-        key="cook_time_remaining",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
-        translation_key="cook_time_remaining",
-        device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda data: data.cook_time_remaining,
+        value_fn=lambda d: d.target_temperature,
     ),
     AnovaSensorEntityDescription(
         key="heater_temperature",
@@ -73,7 +64,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key="heater_temperature",
-        value_fn=lambda data: data.heater_temperature,
+        value_fn=lambda d: d.heater_temperature,
     ),
     AnovaSensorEntityDescription(
         key="triac_temperature",
@@ -81,15 +72,79 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         translation_key="triac_temperature",
-        value_fn=lambda data: data.triac_temperature,
+        value_fn=lambda d: d.triac_temperature,
+    ),
+
+    # --- API Mode (RAW, genau wie gesendet) ---
+    # Vorher ENUM mit AnovaMode -> jetzt RAW-String aus API (z.B. "cook")
+    AnovaSensorEntityDescription(
+        key="mode",
+        translation_key="mode",
+        # absichtlich KEIN device_class=ENUM, damit beliebige API-Strings durchgehen
+        value_fn=lambda d: _get(d, ["raw", "state", "state", "mode"]) or d.mode,
+    ),
+
+    # Active Stage Mode (z.B. "running" / "paused")
+    AnovaSensorEntityDescription(
+        key="active_stage_mode",
+        translation_key="active_stage_mode",
+        value_fn=lambda d: _get(d, ["raw", "state", "cook", "activeStageMode"]),
+    ),
+
+    # --- Cook time (gesamt / verbleibend) als Rohsensoren ---
+    AnovaSensorEntityDescription(
+        key="cook_time",
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        translation_key="cook_time",
+        device_class=SensorDeviceClass.DURATION,
+        value_fn=lambda d: d.cook_time,
     ),
     AnovaSensorEntityDescription(
-        key="water_temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        translation_key="water_temperature",
-        value_fn=lambda data: data.water_temperature,
+        key="cook_time_remaining",
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        translation_key="cook_time_remaining",
+        device_class=SensorDeviceClass.DURATION,
+        value_fn=lambda d: d.cook_time_remaining,
+    ),
+
+    # --- Timer (RAW) ---
+    AnovaSensorEntityDescription(
+        key="timer_initial",
+        native_unit_of_measurement=UnitOfTime.SECONDS,
+        translation_key="timer_initial",
+        device_class=SensorDeviceClass.DURATION,
+        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "initial"]),
+    ),
+    AnovaSensorEntityDescription(
+        key="timer_mode",
+        translation_key="timer_mode",
+        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "mode"]),
+    ),
+    AnovaSensorEntityDescription(
+        key="timer_started_at",
+        translation_key="timer_started_at",
+        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "startedAtTimestamp"]),
+    ),
+
+    # --- Diagnostics ---
+    AnovaSensorEntityDescription(
+        key="firmware_version",
+        translation_key="firmware_version",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "firmwareVersion"]),
+    ),
+    AnovaSensorEntityDescription(
+        key="hardware_version",
+        translation_key="hardware_version",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "hardwareVersion"]),
+    ),
+    AnovaSensorEntityDescription(
+        key="online",
+        translation_key="online",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "online"]),
     ),
 ]
 
@@ -101,7 +156,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Anova device."""
     anova_data = entry.runtime_data
-
     for coordinator in anova_data.coordinators:
         setup_coordinator(coordinator, async_add_entities)
 
@@ -114,20 +168,20 @@ def setup_coordinator(
 
     def _async_sensor_listener() -> None:
         """Listen for new sensor data and add sensors if they did not exist."""
-        if not coordinator.sensor_data_set:
+        if not coordinator.sensor_data_set and coordinator.data is not None:
             valid_entities: set[AnovaSensor] = set()
             for description in SENSOR_DESCRIPTIONS:
-                if description.value_fn(coordinator.data.sensor) is not None:
+                try:
+                    value = description.value_fn(coordinator.data.sensor)
+                except Exception:  # defensive: einzelne Felder fehlen bei alten Geräten
+                    value = None
+                if value is not None:
                     valid_entities.add(AnovaSensor(coordinator, description))
             async_add_entities(valid_entities)
             coordinator.sensor_data_set = True
 
     if coordinator.data is not None:
         _async_sensor_listener()
-    # It is possible that we don't have any data, but the device exists,
-    # i.e. slow network, offline device, etc.
-    # We want to set up sensors after the fact as we don't know what sensors
-    # are valid until runtime.
     coordinator.async_add_listener(_async_sensor_listener)
 
 
