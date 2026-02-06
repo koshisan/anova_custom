@@ -81,14 +81,14 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         key="mode",
         translation_key="mode",
         # absichtlich KEIN device_class=ENUM, damit beliebige API-Strings durchgehen
-        value_fn=lambda d: _get(d, ["raw", "state", "state", "mode"]) or d.mode,
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "state", "mode"]) or d.mode,
     ),
 
     # Active Stage Mode (z.B. "running" / "paused")
     AnovaSensorEntityDescription(
         key="active_stage_mode",
         translation_key="active_stage_mode",
-        value_fn=lambda d: _get(d, ["raw", "state", "cook", "activeStageMode"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "cook", "activeStageMode"]),
     ),
 
     # --- Cook time (gesamt / verbleibend) als Rohsensoren ---
@@ -114,17 +114,17 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         native_unit_of_measurement=UnitOfTime.SECONDS,
         translation_key="timer_initial",
         device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "initial"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "initial"]),
     ),
     AnovaSensorEntityDescription(
         key="timer_mode",
         translation_key="timer_mode",
-        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "mode"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "mode"]),
     ),
     AnovaSensorEntityDescription(
         key="timer_started_at",
         translation_key="timer_started_at",
-        value_fn=lambda d: _get(d, ["raw", "state", "nodes", "timer", "startedAtTimestamp"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"]),
     ),
 
     # --- Diagnostics ---
@@ -132,19 +132,19 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         key="firmware_version",
         translation_key="firmware_version",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "firmwareVersion"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "firmwareVersion"]),
     ),
     AnovaSensorEntityDescription(
         key="hardware_version",
         translation_key="hardware_version",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "hardwareVersion"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "hardwareVersion"]),
     ),
     AnovaSensorEntityDescription(
         key="online",
         translation_key="online",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "state", "systemInfo", "online"]),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "online"]),
     ),
 ]
 

@@ -133,6 +133,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                 raw = cand
 
             if isinstance(raw, dict) and getattr(update, "sensor", None) is not None:
+                # Attach the raw dict directly so sensor.py can access it via _get(d, ["raw", ...])
+                setattr(update.sensor, "raw", raw)
                 _enrich_sensor_from_raw(update.sensor, raw)
             else:
                 _LOGGER.debug("Anova: no raw payload available for enrichment (ok).")
