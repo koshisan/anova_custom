@@ -130,7 +130,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: AnovaConfigEntry) -> boo
         # websocket client
         assert api.websocket_handler is not None
     devices = list(api.websocket_handler.devices.values())
+    _LOGGER.info("Found %d devices: %s", len(devices), [d.cooker_id for d in devices])
     coordinators = [AnovaCoordinator(hass, entry, device) for device in devices]
+    _LOGGER.info("Created %d coordinators", len(coordinators))
     entry.runtime_data = AnovaData(api_jwt=api.jwt, coordinators=coordinators, api=api)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 

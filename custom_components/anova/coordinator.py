@@ -98,6 +98,7 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         # Statt direkt async_set_updated_data → eigener Handler,
         # damit wir Raw-Werte anreichern können.
         self.anova_device.set_update_listener(self._handle_update)
+        _LOGGER.info("Set update_listener on device %s: %s", anova_device.cooker_id, self._handle_update)
         self.device_info: DeviceInfo | None = None
 
         self.device_info = DeviceInfo(
