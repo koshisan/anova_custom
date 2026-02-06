@@ -126,8 +126,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
     def _countdown_tick(self, _now: datetime) -> None:
         """Called every second to update countdown."""
         if self._timer_mode == "running" and self.data is not None:
-            # Trigger sensor update
-            self.async_set_updated_data(self.data)
+            # Trigger sensor update - must schedule as task since this is a sync callback
+            self.hass.async_create_task(self.async_set_updated_data(self.data))
     
     async def _async_start_countdown(self) -> None:
         """Start the countdown interval (must be called from event loop)."""
