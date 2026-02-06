@@ -152,7 +152,13 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         NOTE: This must be a sync function because anova_wifi calls update_listeners
         without await. We schedule the async work via asyncio.create_task().
         """
-        _LOGGER.debug("Anova _handle_update called! update=%r", update)
+        _LOGGER.info(
+            "[ANOVA-COORD] ═══════════════════════════════════════════════════"
+        )
+        _LOGGER.info(
+            "[ANOVA-COORD] _handle_update called for device %s", 
+            self.device_unique_id
+        )
         try:
             # Roh-Payload bestmöglich beschaffen
             raw: Optional[dict] = None
@@ -184,6 +190,13 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                 new_initial = int(timer.get("initial", 0))
                 new_started = timer.get("startedAtTimestamp")
                 
+                _LOGGER.info(
+                    "[ANOVA-COORD] Timer state: mode=%s→%s | initial=%s→%s | started=%s→%s",
+                    self._timer_mode, new_mode,
+                    self._timer_initial, new_initial,
+                    self._timer_started_at, new_started
+                )
+                
                 # Update timer state
                 self._timer_initial = new_initial
                 self._timer_mode = new_mode
@@ -208,7 +221,22 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             _LOGGER.debug("Anova enrich failed: %r", exc)
 
         # Update weiterreichen — schedule async call from sync context (thread-safe)
-        _LOGGER.debug("Anova scheduling async_set_updated_data, sensor.raw=%r", getattr(getattr(update, 'sensor', None), 'raw', 'NO_SENSOR'))
+        sensor = getattr(update, 'sensor', None)
+        _LOGGER.info(
+            "[ANOVA-COORD] Propagating update. has_sensor=%s | has_raw=%s",
+            sensor is not None,
+            hasattr(sensor, 'raw') if sensor else False
+        )
+        if sensor:
+            _LOGGER.info(
+                "[ANOVA-COORD] sensor attrs: mode_raw=%s | timer_mode=%s | timer_initial=%s",
+                getattr(sensor, 'mode_raw', 'N/A'),
+                getattr(sensor, 'timer_mode', 'N/A'),
+                getattr(sensor, 'timer_initial', 'N/A')
+            )
+        _LOGGER.info(
+            "[ANOVA-COORD] ═══════════════════════════════════════════════════"
+        )
         self.hass.loop.call_soon_threadsafe(
             self.hass.async_create_task,
             self.async_set_updated_data(update)
