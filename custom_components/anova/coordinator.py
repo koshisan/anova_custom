@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 import logging
 from typing import Any, Optional
@@ -105,8 +106,12 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         )
         self.sensor_data_set: bool = False
 
-    async def _handle_update(self, update: APCUpdate) -> None:
-        """Receive device update, enrich sensor with raw payload, propagate."""
+    def _handle_update(self, update: APCUpdate) -> None:
+        """Receive device update, enrich sensor with raw payload, propagate.
+        
+        NOTE: This must be a sync function because anova_wifi calls update_listeners
+        without await. We schedule the async work via asyncio.create_task().
+        """
         try:
             # Roh-Payload bestmöglich beschaffen
             raw: Optional[dict] = None
@@ -135,5 +140,5 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         except Exception as exc:  # defensiv — Enrichment darf niemals den Update-Flow brechen
             _LOGGER.debug("Anova enrich failed: %r", exc)
 
-        # Update weiterreichen
-        await self.async_set_updated_data(update)
+        # Update weiterreichen — schedule async call from sync context
+        asyncio.create_task(self.async_set_updated_data(update))
