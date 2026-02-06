@@ -100,26 +100,27 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
     AnovaSensorEntityDescription(
         key="cook_time",
         state_class=SensorStateClass.TOTAL_INCREASING,
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         translation_key="cook_time",
         device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda d: d.cook_time,
+        value_fn=lambda d: round(d.cook_time / 60, 1) if d.cook_time else None,
     ),
     AnovaSensorEntityDescription(
         key="cook_time_remaining",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         translation_key="cook_time_remaining",
         device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda d: d.cook_time_remaining,
+        # Special: uses coordinator.get_cook_time_remaining() for live countdown
+        value_fn=lambda d: None,  # Overridden in AnovaSensor
     ),
 
     # --- Timer (RAW) ---
     AnovaSensorEntityDescription(
         key="timer_initial",
-        native_unit_of_measurement=UnitOfTime.SECONDS,
+        native_unit_of_measurement=UnitOfTime.MINUTES,
         translation_key="timer_initial",
         device_class=SensorDeviceClass.DURATION,
-        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "initial"]),
+        value_fn=lambda d: round(_get(d, ["raw", "payload", "state", "nodes", "timer", "initial"]) / 60, 1) if _get(d, ["raw", "payload", "state", "nodes", "timer", "initial"]) else None,
     ),
     AnovaSensorEntityDescription(
         key="timer_mode",
@@ -185,11 +186,14 @@ def setup_coordinator(
             # Skip if already created
             if description.key in created_sensors:
                 continue
-            # Only create if value is not None
-            try:
-                value = description.value_fn(coordinator.data.sensor)
-            except Exception:
-                value = None
+            # Special handling for live countdown timer
+            if description.key == "cook_time_remaining":
+                value = coordinator.get_cook_time_remaining()
+            else:
+                try:
+                    value = description.value_fn(coordinator.data.sensor)
+                except Exception:
+                    value = None
             if value is not None:
                 new_entities.add(AnovaSensor(coordinator, description))
                 created_sensors.add(description.key)
@@ -212,4 +216,10 @@ class AnovaSensor(AnovaDescriptionEntity, SensorEntity):
     @property
     def native_value(self) -> StateType:
         """Return the state."""
+        # Special handling for live countdown timer
+        if self.entity_description.key == "cook_time_remaining":
+            remaining_seconds = self.coordinator.get_cook_time_remaining()
+            if remaining_seconds is not None:
+                return round(remaining_seconds / 60, 1)
+            return None
         return self.entity_description.value_fn(self.coordinator.data.sensor)
