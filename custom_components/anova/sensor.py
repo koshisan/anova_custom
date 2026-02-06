@@ -198,6 +198,10 @@ def setup_coordinator(
                 new_entities.add(AnovaSensor(coordinator, description))
                 created_sensors.add(description.key)
                 _LOGGER.debug("Creating sensor %s with value %r", description.key, value)
+            elif description.key == "timer_started_at":
+                # Debug why timer_started_at might be None
+                raw = getattr(coordinator.data.sensor, "raw", None)
+                _LOGGER.debug("timer_started_at is None. raw=%r", raw)
         
         if new_entities:
             async_add_entities(new_entities)

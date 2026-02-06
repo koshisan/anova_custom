@@ -196,6 +196,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                     self._timer_started_at = None
                 
                 # Start/stop countdown based on timer mode
+                _LOGGER.debug("Timer state: mode=%s, initial=%s, started_at=%s", 
+                             new_mode, new_initial, self._timer_started_at)
                 if new_mode == "running" and new_initial > 0:
                     self.hass.loop.call_soon_threadsafe(self._start_countdown)
                 else:
