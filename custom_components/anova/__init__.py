@@ -89,18 +89,11 @@ def _get_cooker_id_from_device_id(hass: HomeAssistant, device_id: str) -> str | 
 
 def _get_api_for_cooker(hass: HomeAssistant, cooker_id: str) -> AnovaApi | None:
     """Find the API instance that has this cooker."""
-    for entry_id, entry in hass.config_entries.async_entries(DOMAIN):
+    for entry in hass.config_entries.async_entries(DOMAIN):
         if hasattr(entry, "runtime_data") and entry.runtime_data:
             api = entry.runtime_data.api
             if api.websocket_handler and cooker_id in api.websocket_handler.devices:
                 return api
-    # Fallback: check all loaded entries
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.state.name == "LOADED" and hasattr(entry, "runtime_data"):
-            data = entry.runtime_data
-            if data and data.api.websocket_handler:
-                if cooker_id in data.api.websocket_handler.devices:
-                    return data.api
     return None
 
 
