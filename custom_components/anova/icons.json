@@ -1,14 +1,11 @@
 {
   "entity": {
     "sensor": {
-      "cook_time": {
-        "default": "mdi:clock-outline"
+      "water_temperature": {
+        "default": "mdi:thermometer"
       },
       "target_temperature": {
         "default": "mdi:thermometer"
-      },
-      "cook_time_remaining": {
-        "default": "mdi:clock-outline"
       },
       "heater_temperature": {
         "default": "mdi:thermometer"
@@ -16,8 +13,35 @@
       "triac_temperature": {
         "default": "mdi:thermometer"
       },
-      "water_temperature": {
-        "default": "mdi:thermometer"
+      "mode": {
+        "default": "mdi:state-machine"
+      },
+      "active_stage_mode": {
+        "default": "mdi:progress-clock"
+      },
+      "cook_time": {
+        "default": "mdi:timer-outline"
+      },
+      "cook_time_remaining": {
+        "default": "mdi:timer-sand"
+      },
+      "timer_initial": {
+        "default": "mdi:timer"
+      },
+      "timer_mode": {
+        "default": "mdi:timer-cog"
+      },
+      "timer_started_at": {
+        "default": "mdi:clock-start"
+      },
+      "firmware_version": {
+        "default": "mdi:chip"
+      },
+      "hardware_version": {
+        "default": "mdi:memory"
+      },
+      "online": {
+        "default": "mdi:cloud-check"
       }
     }
   }

@@ -18,25 +18,23 @@
   },
   "entity": {
     "sensor": {
-      "cook_time": {
-        "name": "Cook time"
+      "water_temperature": {
+        "name": "Water temperature"
       },
-      "state": {
-        "name": "State",
-        "state": {
-          "preheating": "Preheating",
-          "cooking": "Cooking",
-          "maintaining": "Maintaining",
-          "timer_expired": "Timer expired",
-          "set_timer": "Set timer",
-          "no_state": "No state"
-        }
+      "target_temperature": {
+        "name": "Target temperature"
+      },
+      "heater_temperature": {
+        "name": "Heater temperature"
+      },
+      "triac_temperature": {
+        "name": "Triac temperature"
       },
       "mode": {
-        "name": "[%key:common::config_flow::data::mode%]",
+        "name": "Mode",
         "state": {
           "startup": "Startup",
-          "idle": "[%key:common::state::idle%]",
+          "idle": "Idle",
           "cook": "Cooking",
           "low_water": "Low water",
           "ota": "OTA update",
@@ -45,20 +43,32 @@
           "device_failure": "Device failure"
         }
       },
-      "target_temperature": {
-        "name": "Target temperature"
+      "active_stage_mode": {
+        "name": "Cooking stage"
+      },
+      "cook_time": {
+        "name": "Cook time"
       },
       "cook_time_remaining": {
         "name": "Cook time remaining"
       },
-      "heater_temperature": {
-        "name": "Heater temperature"
+      "timer_initial": {
+        "name": "Timer duration"
       },
-      "triac_temperature": {
-        "name": "Triac temperature"
+      "timer_mode": {
+        "name": "Timer mode"
       },
-      "water_temperature": {
-        "name": "Water temperature"
+      "timer_started_at": {
+        "name": "Timer started at"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "hardware_version": {
+        "name": "Hardware version"
+      },
+      "online": {
+        "name": "Online"
       }
     }
   }
