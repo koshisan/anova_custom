@@ -1,10 +1,11 @@
 {
   "domain": "anova",
-  "name": "Anova",
-  "codeowners": ["@Lash-L"],
+  "name": "Anova (Custom with Control)",
+  "codeowners": ["@Lash-L", "@koshisan"],
   "config_flow": true,
-  "documentation": "https://www.home-assistant.io/integrations/anova",
+  "documentation": "https://github.com/koshisan/anova_custom",
   "iot_class": "cloud_push",
   "loggers": ["anova_wifi"],
-  "requirements": ["anova-wifi==0.17.0"]
+  "requirements": ["anova-wifi @ git+https://github.com/koshisan/anova_wifi@main"],
+  "version": "1.0.0"
 }

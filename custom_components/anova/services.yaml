@@ -1,0 +1,90 @@
+# Anova Sous Vide Control Services
+
+start_cook:
+  name: Start Cooking
+  description: Start sous vide cooking with target temperature and optional timer.
+  fields:
+    device_id:
+      name: Device
+      description: The Anova device to control.
+      required: true
+      selector:
+        device:
+          integration: anova
+    target_temperature:
+      name: Target Temperature
+      description: Target temperature in Celsius (0-95°C).
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 95
+          step: 0.5
+          unit_of_measurement: "°C"
+    timer_minutes:
+      name: Timer (Minutes)
+      description: Cook time in minutes. Set to 0 for no timer.
+      required: false
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 6000
+          step: 1
+          unit_of_measurement: "min"
+
+stop_cook:
+  name: Stop Cooking
+  description: Stop the current cooking session.
+  fields:
+    device_id:
+      name: Device
+      description: The Anova device to control.
+      required: true
+      selector:
+        device:
+          integration: anova
+
+set_temperature:
+  name: Set Temperature
+  description: Change the target temperature while cooking.
+  fields:
+    device_id:
+      name: Device
+      description: The Anova device to control.
+      required: true
+      selector:
+        device:
+          integration: anova
+    target_temperature:
+      name: Target Temperature
+      description: Target temperature in Celsius (0-95°C).
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 95
+          step: 0.5
+          unit_of_measurement: "°C"
+
+set_timer:
+  name: Set Timer
+  description: Set or update the cooking timer.
+  fields:
+    device_id:
+      name: Device
+      description: The Anova device to control.
+      required: true
+      selector:
+        device:
+          integration: anova
+    timer_minutes:
+      name: Timer (Minutes)
+      description: Timer duration in minutes.
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 6000
+          step: 1
+          unit_of_measurement: "min"
