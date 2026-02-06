@@ -5,9 +5,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 from anova_wifi import APCUpdateSensor  # Beibehalten
+
+_LOGGER = logging.getLogger(__name__)
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -34,8 +37,10 @@ def _get(data: APCUpdateSensor, path: list[str]) -> Any:
     """Safe getter for nested attributes on APCUpdateSensor proxy objects."""
     obj: Any = data
     for key in path:
+        prev = obj
         obj = getattr(obj, key, None) if not isinstance(obj, dict) else obj.get(key)
         if obj is None:
+            _LOGGER.debug("_get failed at key=%r, prev_type=%s, path=%r", key, type(prev).__name__, path)
             return None
     return obj
 
@@ -132,19 +137,19 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         key="firmware_version",
         translation_key="firmware_version",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "firmwareVersion"]),
+        value_fn=lambda d: getattr(d, "firmware_version", None) or _get(d, ["raw", "payload", "state", "systemInfo", "firmwareVersion"]),
     ),
     AnovaSensorEntityDescription(
         key="hardware_version",
         translation_key="hardware_version",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "hardwareVersion"]),
+        value_fn=lambda d: getattr(d, "hardware_version", None) or _get(d, ["raw", "payload", "state", "systemInfo", "hardwareVersion"]),
     ),
     AnovaSensorEntityDescription(
         key="online",
         translation_key="online",
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda d: _get(d, ["raw", "payload", "state", "systemInfo", "online"]),
+        value_fn=lambda d: getattr(d, "online", None) if getattr(d, "online", None) is not None else _get(d, ["raw", "payload", "state", "systemInfo", "online"]),
     ),
 ]
 
