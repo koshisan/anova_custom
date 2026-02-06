@@ -112,11 +112,11 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             raw: Optional[dict] = None
 
             # 1) Einige anova_wifi-Versionen hängen den letzten WS-Frame ans Device
-            for attr in ("last_message", "last_state", "raw_state", "raw"):
+            for attr in ("last_raw_message", "last_message", "last_state", "raw_state", "raw"):
                 raw = raw or getattr(self.anova_device, attr, None)
 
             # 2) Manche hängen Rohdaten direkt ans Update
-            for attr in ("raw", "payload", "message"):
+            for attr in ("raw_message", "raw", "payload", "message"):
                 cand = getattr(update, attr, None)
                 if isinstance(cand, dict):
                     raw = cand
