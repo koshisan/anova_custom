@@ -6,6 +6,6 @@
   "documentation": "https://github.com/koshisan/anova_custom",
   "iot_class": "cloud_push",
   "loggers": ["anova_wifi"],
-  "requirements": ["anova-wifi @ git+https://github.com/koshisan/anova_wifi@v0.18.2"],
-  "version": "1.2.0"
+  "requirements": ["anova-wifi==0.17.1"],
+  "version": "1.2.1"
 }
