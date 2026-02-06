@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "Email",
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication",
+      "unknown": "Unknown error"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "water_temperature": {
+        "name": "Water temperature"
+      },
+      "target_temperature": {
+        "name": "Target temperature"
+      },
+      "heater_temperature": {
+        "name": "Heater temperature"
+      },
+      "triac_temperature": {
+        "name": "Triac temperature"
+      },
+      "mode": {
+        "name": "Mode",
+        "state": {
+          "startup": "Startup",
+          "idle": "Idle",
+          "cook": "Cooking",
+          "low_water": "Low water",
+          "ota": "OTA update",
+          "provisioning": "Provisioning",
+          "high_temp": "High temperature",
+          "device_failure": "Device failure"
+        }
+      },
+      "active_stage_mode": {
+        "name": "Cooking stage"
+      },
+      "cook_time": {
+        "name": "Cook time"
+      },
+      "cook_time_remaining": {
+        "name": "Time remaining"
+      },
+      "timer_initial": {
+        "name": "Timer duration"
+      },
+      "timer_mode": {
+        "name": "Timer mode"
+      },
+      "timer_started_at": {
+        "name": "Timer started at"
+      },
+      "firmware_version": {
+        "name": "Firmware version"
+      },
+      "hardware_version": {
+        "name": "Hardware version"
+      },
+      "online": {
+        "name": "Online"
+      }
+    },
+    "binary_sensor": {
+      "cooking": {
+        "name": "Cooking"
+      },
+      "preheating": {
+        "name": "Preheating"
+      },
+      "maintaining": {
+        "name": "Maintaining"
+      },
+      "device_safe": {
+        "name": "Device safe"
+      },
+      "water_leak": {
+        "name": "Water leak"
+      },
+      "water_level_critical": {
+        "name": "Low water critical"
+      },
+      "water_temp_too_high": {
+        "name": "Water too hot"
+      },
+      "water_level_low": {
+        "name": "Low water warning"
+      }
+    }
+  }
+}

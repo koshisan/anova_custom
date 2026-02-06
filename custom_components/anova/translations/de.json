@@ -1,0 +1,98 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "username": "E-Mail",
+          "password": "Passwort"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Ungültige Anmeldedaten",
+      "unknown": "Unbekannter Fehler"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "water_temperature": {
+        "name": "Wassertemperatur"
+      },
+      "target_temperature": {
+        "name": "Soll-Temperatur"
+      },
+      "heater_temperature": {
+        "name": "Heizer-Temperatur"
+      },
+      "triac_temperature": {
+        "name": "Triac-Temperatur"
+      },
+      "mode": {
+        "name": "Modus",
+        "state": {
+          "startup": "Startet",
+          "idle": "Bereit",
+          "cook": "Kocht",
+          "low_water": "Wenig Wasser",
+          "ota": "OTA Update",
+          "provisioning": "Einrichtung",
+          "high_temp": "Hohe Temperatur",
+          "device_failure": "Gerätefehler"
+        }
+      },
+      "active_stage_mode": {
+        "name": "Kochphase"
+      },
+      "cook_time": {
+        "name": "Kochzeit"
+      },
+      "cook_time_remaining": {
+        "name": "Dauer verbleibend"
+      },
+      "timer_initial": {
+        "name": "Timer Dauer"
+      },
+      "timer_mode": {
+        "name": "Timer Modus"
+      },
+      "timer_started_at": {
+        "name": "Timer gestartet um"
+      },
+      "firmware_version": {
+        "name": "Firmware-Version"
+      },
+      "hardware_version": {
+        "name": "Hardware-Version"
+      },
+      "online": {
+        "name": "Online-Status"
+      }
+    },
+    "binary_sensor": {
+      "cooking": {
+        "name": "Kocht"
+      },
+      "preheating": {
+        "name": "Heizt vor"
+      },
+      "maintaining": {
+        "name": "Hält Temperatur"
+      },
+      "device_safe": {
+        "name": "Gerät sicher"
+      },
+      "water_leak": {
+        "name": "Wasserleck"
+      },
+      "water_level_critical": {
+        "name": "Wasserstand kritisch"
+      },
+      "water_temp_too_high": {
+        "name": "Wasser zu heiß"
+      },
+      "water_level_low": {
+        "name": "Wasserstand niedrig"
+      }
+    }
+  }
+}
