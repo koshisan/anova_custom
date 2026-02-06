@@ -143,6 +143,9 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         except Exception as exc:  # defensiv — Enrichment darf niemals den Update-Flow brechen
             _LOGGER.debug("Anova enrich failed: %r", exc)
 
-        # Update weiterreichen — schedule async call from sync context
+        # Update weiterreichen — schedule async call from sync context (thread-safe)
         _LOGGER.debug("Anova scheduling async_set_updated_data, sensor.raw=%r", getattr(getattr(update, 'sensor', None), 'raw', 'NO_SENSOR'))
-        asyncio.create_task(self.async_set_updated_data(update))
+        self.hass.loop.call_soon_threadsafe(
+            self.hass.async_create_task,
+            self.async_set_updated_data(update)
+        )
