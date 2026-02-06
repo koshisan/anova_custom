@@ -184,35 +184,20 @@ def setup_coordinator(
 ) -> None:
     """Set up an individual Anova Coordinator."""
 
-    # Track which sensor keys have been created
-    created_sensors: set[str] = set()
+    # Track if sensors have been created
+    sensors_created = False
     
     def _async_sensor_listener() -> None:
-        """Listen for new sensor data and add sensors when they have values."""
-        if coordinator.data is None:
+        """Listen for new sensor data and add sensors."""
+        nonlocal sensors_created
+        if sensors_created or coordinator.data is None:
             return
-            
-        new_entities: set[AnovaSensor] = set()
-        for description in SENSOR_DESCRIPTIONS:
-            # Skip if already created
-            if description.key in created_sensors:
-                continue
-            # Special handling for live countdown timer
-            if description.key == "cook_time_remaining":
-                value = coordinator.get_cook_time_remaining()
-            else:
-                try:
-                    value = description.value_fn(coordinator.data.sensor)
-                except Exception:
-                    value = None
-            if value is not None:
-                new_entities.add(AnovaSensor(coordinator, description))
-                created_sensors.add(description.key)
-                _LOGGER.debug("Creating sensor %s with value %r", description.key, value)
         
-        if new_entities:
-            async_add_entities(new_entities)
-            _LOGGER.debug("Added %d new sensors for Anova device", len(new_entities))
+        # Create ALL sensors at once
+        entities = [AnovaSensor(coordinator, desc) for desc in SENSOR_DESCRIPTIONS]
+        async_add_entities(entities)
+        sensors_created = True
+        _LOGGER.debug("Created %d sensors for Anova device", len(entities))
 
     if coordinator.data is not None:
         _async_sensor_listener()
