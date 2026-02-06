@@ -33,17 +33,6 @@ class AnovaSensorEntityDescription(SensorEntityDescription):
     value_fn: Callable[[APCUpdateSensor], StateType]
 
 
-def _parse_timestamp(ts: str | None) -> Any:
-    """Parse ISO timestamp string to datetime for HA TIMESTAMP sensors."""
-    if not ts:
-        return None
-    try:
-        from datetime import datetime
-        return datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    except Exception:
-        return None
-
-
 def _get(data: APCUpdateSensor, path: list[str]) -> Any:
     """Safe getter for nested attributes on APCUpdateSensor proxy objects."""
     obj: Any = data
@@ -142,7 +131,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         key="timer_started_at",
         translation_key="timer_started_at",
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda d: _parse_timestamp(_get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"])),
+        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"]),
     ),
 
     # --- Diagnostics ---

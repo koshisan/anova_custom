@@ -126,11 +126,11 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
     def _countdown_tick(self, _now: datetime) -> None:
         """Called every second to update countdown."""
         if self._timer_mode == "running" and self.data is not None:
-            # Trigger sensor update - must schedule as task since this is a sync callback
-            self.hass.async_create_task(self.async_set_updated_data(self.data))
+            # Trigger sensor update
+            self.async_set_updated_data(self.data)
     
-    async def _async_start_countdown(self) -> None:
-        """Start the countdown interval (must be called from event loop)."""
+    def _start_countdown(self) -> None:
+        """Start the countdown interval."""
         if self._countdown_unsub is None:
             from datetime import timedelta
             self._countdown_unsub = async_track_time_interval(
@@ -138,8 +138,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             )
             _LOGGER.debug("Started countdown timer")
     
-    async def _async_stop_countdown(self) -> None:
-        """Stop the countdown interval (must be called from event loop)."""
+    def _stop_countdown(self) -> None:
+        """Stop the countdown interval."""
         if self._countdown_unsub is not None:
             self._countdown_unsub()
             self._countdown_unsub = None
@@ -196,16 +196,10 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                     self._timer_started_at = None
                 
                 # Start/stop countdown based on timer mode
-                if new_mode == "running" and new_initial > 0 and self._timer_started_at:
-                    self.hass.loop.call_soon_threadsafe(
-                        self.hass.async_create_task,
-                        self._async_start_countdown()
-                    )
+                if new_mode == "running" and new_initial > 0:
+                    self.hass.loop.call_soon_threadsafe(self._start_countdown)
                 else:
-                    self.hass.loop.call_soon_threadsafe(
-                        self.hass.async_create_task,
-                        self._async_stop_countdown()
-                    )
+                    self.hass.loop.call_soon_threadsafe(self._stop_countdown)
             else:
                 _LOGGER.debug("Anova: no raw payload available for enrichment (ok).")
 
