@@ -129,6 +129,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
     AnovaSensorEntityDescription(
         key="timer_started_at",
         translation_key="timer_started_at",
+        device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"]),
     ),
 
