@@ -171,15 +171,32 @@ def setup_coordinator(
 ) -> None:
     """Set up an individual Anova Coordinator."""
 
+    # Track which sensor keys have been created
+    created_sensors: set[str] = set()
+    
     def _async_sensor_listener() -> None:
-        """Listen for new sensor data and add sensors if they did not exist."""
-        if not coordinator.sensor_data_set and coordinator.data is not None:
-            # Create ALL sensors - they'll show unavailable until data arrives
-            # Don't filter by initial value, as raw data may not be available yet
-            valid_entities = {AnovaSensor(coordinator, desc) for desc in SENSOR_DESCRIPTIONS}
-            async_add_entities(valid_entities)
-            coordinator.sensor_data_set = True
-            _LOGGER.debug("Created %d sensors for Anova device", len(valid_entities))
+        """Listen for new sensor data and add sensors when they have values."""
+        if coordinator.data is None:
+            return
+            
+        new_entities: set[AnovaSensor] = set()
+        for description in SENSOR_DESCRIPTIONS:
+            # Skip if already created
+            if description.key in created_sensors:
+                continue
+            # Only create if value is not None
+            try:
+                value = description.value_fn(coordinator.data.sensor)
+            except Exception:
+                value = None
+            if value is not None:
+                new_entities.add(AnovaSensor(coordinator, description))
+                created_sensors.add(description.key)
+                _LOGGER.debug("Creating sensor %s with value %r", description.key, value)
+        
+        if new_entities:
+            async_add_entities(new_entities)
+            _LOGGER.debug("Added %d new sensors for Anova device", len(new_entities))
 
     if coordinator.data is not None:
         _async_sensor_listener()
