@@ -112,6 +112,7 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         NOTE: This must be a sync function because anova_wifi calls update_listeners
         without await. We schedule the async work via asyncio.create_task().
         """
+        _LOGGER.debug("Anova _handle_update called! update=%r", update)
         try:
             # Roh-Payload bestmöglich beschaffen
             raw: Optional[dict] = None
@@ -143,4 +144,5 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             _LOGGER.debug("Anova enrich failed: %r", exc)
 
         # Update weiterreichen — schedule async call from sync context
+        _LOGGER.debug("Anova scheduling async_set_updated_data, sensor.raw=%r", getattr(getattr(update, 'sensor', None), 'raw', 'NO_SENSOR'))
         asyncio.create_task(self.async_set_updated_data(update))
