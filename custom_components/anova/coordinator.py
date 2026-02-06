@@ -197,14 +197,12 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                 
                 # Start/stop countdown based on timer mode
                 if new_mode == "running" and new_initial > 0 and self._timer_started_at:
-                    self.hass.loop.call_soon_threadsafe(
-                        self.hass.async_create_task,
-                        self._async_start_countdown()
+                    asyncio.run_coroutine_threadsafe(
+                        self._async_start_countdown(), self.hass.loop
                     )
                 else:
-                    self.hass.loop.call_soon_threadsafe(
-                        self.hass.async_create_task,
-                        self._async_stop_countdown()
+                    asyncio.run_coroutine_threadsafe(
+                        self._async_stop_countdown(), self.hass.loop
                     )
             else:
                 _LOGGER.debug("Anova: no raw payload available for enrichment (ok).")
@@ -214,7 +212,6 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
 
         # Update weiterreichen — schedule async call from sync context (thread-safe)
         _LOGGER.debug("Anova scheduling async_set_updated_data, sensor.raw=%r", getattr(getattr(update, 'sensor', None), 'raw', 'NO_SENSOR'))
-        self.hass.loop.call_soon_threadsafe(
-            self.hass.async_create_task,
-            self.async_set_updated_data(update)
+        asyncio.run_coroutine_threadsafe(
+            self.async_set_updated_data(update), self.hass.loop
         )
