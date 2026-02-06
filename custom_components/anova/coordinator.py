@@ -129,8 +129,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             # Trigger sensor update
             self.async_set_updated_data(self.data)
     
-    def _start_countdown(self) -> None:
-        """Start the countdown interval."""
+    async def _async_start_countdown(self) -> None:
+        """Start the countdown interval (must be called from event loop)."""
         if self._countdown_unsub is None:
             from datetime import timedelta
             self._countdown_unsub = async_track_time_interval(
@@ -138,8 +138,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             )
             _LOGGER.debug("Started countdown timer")
     
-    def _stop_countdown(self) -> None:
-        """Stop the countdown interval."""
+    async def _async_stop_countdown(self) -> None:
+        """Stop the countdown interval (must be called from event loop)."""
         if self._countdown_unsub is not None:
             self._countdown_unsub()
             self._countdown_unsub = None
@@ -196,12 +196,16 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                     self._timer_started_at = None
                 
                 # Start/stop countdown based on timer mode
-                _LOGGER.debug("Timer state: mode=%s, initial=%s, started_at=%s", 
-                             new_mode, new_initial, self._timer_started_at)
-                if new_mode == "running" and new_initial > 0:
-                    self.hass.loop.call_soon_threadsafe(self._start_countdown)
+                if new_mode == "running" and new_initial > 0 and self._timer_started_at:
+                    self.hass.loop.call_soon_threadsafe(
+                        self.hass.async_create_task,
+                        self._async_start_countdown()
+                    )
                 else:
-                    self.hass.loop.call_soon_threadsafe(self._stop_countdown)
+                    self.hass.loop.call_soon_threadsafe(
+                        self.hass.async_create_task,
+                        self._async_stop_countdown()
+                    )
             else:
                 _LOGGER.debug("Anova: no raw payload available for enrichment (ok).")
 
