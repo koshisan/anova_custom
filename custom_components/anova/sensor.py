@@ -66,6 +66,25 @@ def _parse_timestamp(ts: str | None):
         return None
 
 
+def _calc_timer_ends_at(data):
+    """Calculate when the timer will end (started_at + initial seconds)."""
+    from datetime import timedelta
+    
+    started_at = _parse_timestamp(_get(data, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"]))
+    initial_secs = _get(data, ["raw", "payload", "state", "nodes", "timer", "initial"])
+    timer_mode = _get(data, ["raw", "payload", "state", "nodes", "timer", "mode"])
+    
+    # Only calculate if timer is running
+    if timer_mode != "running" or not started_at or not initial_secs:
+        return None
+    
+    try:
+        return started_at + timedelta(seconds=int(initial_secs))
+    except Exception as ex:
+        _LOGGER.warning("[ANOVA-SENSOR] Failed to calc timer_ends_at: %s", ex)
+        return None
+
+
 SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
     # --- Temperatures ---
     AnovaSensorEntityDescription(
@@ -84,22 +103,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         translation_key="target_temperature",
         value_fn=lambda d: d.target_temperature,
     ),
-    AnovaSensorEntityDescription(
-        key="heater_temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        translation_key="heater_temperature",
-        value_fn=lambda d: d.heater_temperature,
-    ),
-    AnovaSensorEntityDescription(
-        key="triac_temperature",
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-        device_class=SensorDeviceClass.TEMPERATURE,
-        state_class=SensorStateClass.MEASUREMENT,
-        translation_key="triac_temperature",
-        value_fn=lambda d: d.triac_temperature,
-    ),
+    # heater_temperature and triac_temperature removed - not useful for Nano
 
     # --- API Mode (RAW, genau wie gesendet) ---
     # Vorher ENUM mit AnovaMode -> jetzt RAW-String aus API (z.B. "cook")
@@ -127,12 +131,11 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         value_fn=lambda d: round(d.cook_time / 60, 1) if d.cook_time else None,
     ),
     AnovaSensorEntityDescription(
-        key="cook_time_remaining",
-        native_unit_of_measurement=UnitOfTime.MINUTES,
-        translation_key="cook_time_remaining",
-        device_class=SensorDeviceClass.DURATION,
-        # Special: uses coordinator.get_cook_time_remaining() for live countdown
-        value_fn=lambda d: None,  # Overridden in AnovaSensor
+        key="timer_ends_at",
+        translation_key="timer_ends_at",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        # Calculated from started_at + initial - frontend does the countdown
+        value_fn=lambda d: _calc_timer_ends_at(d),
     ),
 
     # --- Timer (RAW) ---
@@ -209,10 +212,4 @@ class AnovaSensor(AnovaDescriptionEntity, SensorEntity):
     @property
     def native_value(self) -> StateType:
         """Return the state."""
-        # Special handling for live countdown timer
-        if self.entity_description.key == "cook_time_remaining":
-            remaining_seconds = self.coordinator.get_cook_time_remaining()
-            if remaining_seconds is not None:
-                return round(remaining_seconds / 60, 1)
-            return None
         return self.entity_description.value_fn(self.coordinator.data.sensor)

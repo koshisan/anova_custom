@@ -21,12 +21,6 @@
       "target_temperature": {
         "name": "Target temperature"
       },
-      "heater_temperature": {
-        "name": "Heater temperature"
-      },
-      "triac_temperature": {
-        "name": "Triac temperature"
-      },
       "mode": {
         "name": "Mode",
         "state": {
@@ -46,8 +40,8 @@
       "cook_time": {
         "name": "Cook time"
       },
-      "cook_time_remaining": {
-        "name": "Time remaining"
+      "timer_ends_at": {
+        "name": "Timer ends at"
       },
       "timer_initial": {
         "name": "Timer duration"

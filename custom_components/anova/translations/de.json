@@ -21,12 +21,6 @@
       "target_temperature": {
         "name": "Soll-Temperatur"
       },
-      "heater_temperature": {
-        "name": "Heizer-Temperatur"
-      },
-      "triac_temperature": {
-        "name": "Triac-Temperatur"
-      },
       "mode": {
         "name": "Modus",
         "state": {
@@ -46,8 +40,8 @@
       "cook_time": {
         "name": "Kochzeit"
       },
-      "cook_time_remaining": {
-        "name": "Dauer verbleibend"
+      "timer_ends_at": {
+        "name": "Timer endet um"
       },
       "timer_initial": {
         "name": "Timer Dauer"

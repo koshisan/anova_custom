@@ -11,9 +11,8 @@ from typing import Any, Optional
 from anova_wifi import AnovaApi, APCUpdate, APCWifiDevice
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import DOMAIN
@@ -95,11 +94,8 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
         )
         self.device_unique_id = anova_device.cooker_id
         self.anova_device = anova_device
-        # Statt direkt async_set_updated_data → eigener Handler,
-        # damit wir Raw-Werte anreichern können.
         self.anova_device.set_update_listener(self._handle_update)
         _LOGGER.info("Set update_listener on device %s: %s", anova_device.cooker_id, self._handle_update)
-        self.device_info: DeviceInfo | None = None
 
         self.device_info = DeviceInfo(
             identifiers={(DOMAIN, self.device_unique_id)},
@@ -108,43 +104,6 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
             model="Precision Cooker",
         )
         self.sensor_data_set: bool = False
-        
-        # Timer countdown state
-        self._timer_initial: int = 0  # seconds
-        self._timer_started_at: datetime | None = None
-        self._timer_mode: str = "idle"
-        self._countdown_unsub: Any = None
-        
-    def get_cook_time_remaining(self) -> int | None:
-        """Calculate current remaining time in seconds."""
-        if self._timer_mode != "running" or not self._timer_started_at or self._timer_initial <= 0:
-            return None
-        elapsed = (datetime.now(timezone.utc) - self._timer_started_at).total_seconds()
-        remaining = max(0, int(self._timer_initial - elapsed))
-        return remaining if remaining > 0 else None
-    
-    @callback
-    def _countdown_tick(self, _now: datetime) -> None:
-        """Called every second to update countdown."""
-        if self._timer_mode == "running" and self.data is not None:
-            # Trigger sensor update
-            self.async_set_updated_data(self.data)
-    
-    def _start_countdown(self) -> None:
-        """Start the countdown interval."""
-        if self._countdown_unsub is None:
-            from datetime import timedelta
-            self._countdown_unsub = async_track_time_interval(
-                self.hass, self._countdown_tick, timedelta(seconds=1)
-            )
-            _LOGGER.debug("Started countdown timer")
-    
-    def _stop_countdown(self) -> None:
-        """Stop the countdown interval."""
-        if self._countdown_unsub is not None:
-            self._countdown_unsub()
-            self._countdown_unsub = None
-            _LOGGER.debug("Stopped countdown timer")
 
     def _handle_update(self, update: APCUpdate) -> None:
         """Receive device update, enrich sensor with raw payload, propagate.
@@ -184,36 +143,14 @@ class AnovaCoordinator(DataUpdateCoordinator[APCUpdate]):
                 setattr(update.sensor, "raw", raw)
                 _enrich_sensor_from_raw(update.sensor, raw)
                 
-                # Extract timer state for countdown
+                # Log timer state for debugging
                 timer = _dig(raw, ["payload", "state", "nodes", "timer"], {}) or {}
-                new_mode = timer.get("mode", "idle")
-                new_initial = int(timer.get("initial", 0))
-                new_started = timer.get("startedAtTimestamp")
-                
                 _LOGGER.info(
-                    "[ANOVA-COORD] Timer state: mode=%s→%s | initial=%s→%s | started=%s→%s",
-                    self._timer_mode, new_mode,
-                    self._timer_initial, new_initial,
-                    self._timer_started_at, new_started
+                    "[ANOVA-COORD] Timer: mode=%s | initial=%s | startedAt=%s",
+                    timer.get("mode"),
+                    timer.get("initial"),
+                    timer.get("startedAtTimestamp")
                 )
-                
-                # Update timer state
-                self._timer_initial = new_initial
-                self._timer_mode = new_mode
-                if new_started:
-                    try:
-                        started_str = new_started.replace("Z", "+00:00")
-                        self._timer_started_at = datetime.fromisoformat(started_str)
-                    except Exception:
-                        self._timer_started_at = None
-                else:
-                    self._timer_started_at = None
-                
-                # Start/stop countdown based on timer mode
-                if new_mode == "running" and new_initial > 0:
-                    self.hass.loop.call_soon_threadsafe(self._start_countdown)
-                else:
-                    self.hass.loop.call_soon_threadsafe(self._stop_countdown)
             else:
                 _LOGGER.debug("Anova: no raw payload available for enrichment (ok).")
 
