@@ -45,18 +45,22 @@ def _get(data: APCUpdateSensor, path: list[str]) -> Any:
     return obj
 
 
-def _parse_timestamp(ts: str | None) -> str | None:
-    """Parse Anova timestamp to ISO format for HA."""
+def _parse_timestamp(ts: str | None):
+    """Parse Anova timestamp to datetime for HA.
+    
+    HA's SensorDeviceClass.TIMESTAMP requires a datetime object, not a string!
+    """
     if not ts:
         return None
     try:
-        # Anova uses ISO format like "2026-02-07T10:30:00Z"
-        # HA expects datetime or ISO string - just normalize it
-        from datetime import datetime
+        from datetime import datetime, timezone
         # Handle Z suffix
         ts_normalized = ts.replace("Z", "+00:00")
         dt = datetime.fromisoformat(ts_normalized)
-        return dt.isoformat()
+        # Ensure timezone-aware
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
     except Exception as ex:
         _LOGGER.warning("[ANOVA-SENSOR] Failed to parse timestamp %r: %s", ts, ex)
         return None
