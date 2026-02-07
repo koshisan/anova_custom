@@ -45,6 +45,23 @@ def _get(data: APCUpdateSensor, path: list[str]) -> Any:
     return obj
 
 
+def _parse_timestamp(ts: str | None) -> str | None:
+    """Parse Anova timestamp to ISO format for HA."""
+    if not ts:
+        return None
+    try:
+        # Anova uses ISO format like "2026-02-07T10:30:00Z"
+        # HA expects datetime or ISO string - just normalize it
+        from datetime import datetime
+        # Handle Z suffix
+        ts_normalized = ts.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(ts_normalized)
+        return dt.isoformat()
+    except Exception as ex:
+        _LOGGER.warning("[ANOVA-SENSOR] Failed to parse timestamp %r: %s", ts, ex)
+        return None
+
+
 SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
     # --- Temperatures ---
     AnovaSensorEntityDescription(
@@ -131,7 +148,7 @@ SENSOR_DESCRIPTIONS: list[AnovaSensorEntityDescription] = [
         key="timer_started_at",
         translation_key="timer_started_at",
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda d: _get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"]),
+        value_fn=lambda d: _parse_timestamp(_get(d, ["raw", "payload", "state", "nodes", "timer", "startedAtTimestamp"])),
     ),
 
     # --- Diagnostics ---
@@ -172,40 +189,12 @@ def setup_coordinator(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up an individual Anova Coordinator."""
-
-    # Track which sensor keys have been created
-    created_sensors: set[str] = set()
-    
-    def _async_sensor_listener() -> None:
-        """Listen for new sensor data and add sensors when they have values."""
-        if coordinator.data is None:
-            return
-            
-        new_entities: set[AnovaSensor] = set()
-        for description in SENSOR_DESCRIPTIONS:
-            # Skip if already created
-            if description.key in created_sensors:
-                continue
-            # Special handling for live countdown timer
-            if description.key == "cook_time_remaining":
-                value = coordinator.get_cook_time_remaining()
-            else:
-                try:
-                    value = description.value_fn(coordinator.data.sensor)
-                except Exception:
-                    value = None
-            if value is not None:
-                new_entities.add(AnovaSensor(coordinator, description))
-                created_sensors.add(description.key)
-                _LOGGER.debug("Creating sensor %s with value %r", description.key, value)
-        
-        if new_entities:
-            async_add_entities(new_entities)
-            _LOGGER.debug("Added %d new sensors for Anova device", len(new_entities))
-
-    if coordinator.data is not None:
-        _async_sensor_listener()
-    coordinator.async_add_listener(_async_sensor_listener)
+    # Create ALL sensors immediately - they'll show "unknown" until data arrives
+    # This is better than lazy creation which can leave sensors missing entirely
+    entities = [AnovaSensor(coordinator, desc) for desc in SENSOR_DESCRIPTIONS]
+    async_add_entities(entities)
+    _LOGGER.info("[ANOVA-SENSOR] Created %d sensors for device %s", 
+                 len(entities), coordinator.device_unique_id)
 
 
 class AnovaSensor(AnovaDescriptionEntity, SensorEntity):
