@@ -179,22 +179,27 @@ async def _async_register_services(hass: HomeAssistant) -> None:
     async def handle_stop_cook(call: ServiceCall) -> None:
         """Handle stop_cook service call."""
         device_id = call.data[ATTR_DEVICE_ID]
+        _LOGGER.info("[ANOVA-SVC] stop_cook called with device_id=%s", device_id)
 
         cooker_id = _get_cooker_id_from_device_id(hass, device_id)
         if cooker_id is None:
-            _LOGGER.error("Could not find Anova device for device_id: %s", device_id)
+            _LOGGER.error("[ANOVA-SVC] Could not find Anova device for device_id: %s", device_id)
             return
+        _LOGGER.info("[ANOVA-SVC] Resolved cooker_id=%s", cooker_id)
 
         api = _get_api_for_cooker(hass, cooker_id)
         if api is None or api.websocket_handler is None:
-            _LOGGER.error("Could not find API for cooker: %s", cooker_id)
+            _LOGGER.error("[ANOVA-SVC] Could not find API for cooker: %s", cooker_id)
             return
+        _LOGGER.info("[ANOVA-SVC] Found API, websocket_handler=%s, ws=%s", 
+                    api.websocket_handler, 
+                    api.websocket_handler.ws if api.websocket_handler else None)
 
         success = await api.websocket_handler.stop_cook(cooker_id=cooker_id)
         if success:
-            _LOGGER.info("Stopped cooking on %s", cooker_id)
+            _LOGGER.info("[ANOVA-SVC] ✓ Stopped cooking on %s", cooker_id)
         else:
-            _LOGGER.error("Failed to stop cooking on %s", cooker_id)
+            _LOGGER.error("[ANOVA-SVC] ✗ Failed to stop cooking on %s", cooker_id)
 
     async def handle_set_temperature(call: ServiceCall) -> None:
         """Handle set_temperature service call."""
